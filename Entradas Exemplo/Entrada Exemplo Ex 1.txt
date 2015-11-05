@@ -1,0 +1,8 @@
+3 // raiz
+1//inserir
+4//elementos a serem inseridos
+5
+6
+8
+2
+5//sair
