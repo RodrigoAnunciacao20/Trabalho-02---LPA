@@ -1,52 +1,49 @@
-#include<stdlib.h>
-#include<stdio.h>
-#include<string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
 
 struct arvore{
-    int ant;
+    int grau;
     char nome [20];
     struct arvore *pai;
     struct arvore *mae;
 };
 
 struct arvore * search (struct arvore * raiz, char * nome){
-	if (strcmp(raiz->nome,nome)==0){
-		return raiz;
-	}
-	if (strcmp(raiz->nome,nome)!=0){
-		return search(raiz->pai, nome);
-	}
-	if (strcmp(raiz->nome,nome)!=0){
-		return search(raiz->mae, nome);
+	if(raiz!=NULL){
+		search(raiz->pai,nome);
+		if(strcmp(raiz->nome,nome)==0){
+			return raiz;
+		}
+		search(raiz->mae,nome);
 	}
 }
 
-void Insertion(struct arvore * raiz, char * filho, char * pai, char * mae){
-	struct arvore * aux1 = (struct arvore *) malloc(sizeof(struct arvore));
-	aux1->pai = NULL;
-    aux1->mae = NULL;
-	struct arvore * aux2 = (struct arvore *) malloc(sizeof(struct arvore));
-	aux2->pai = NULL;
-    aux2->mae = NULL;
-	if (strcmp(raiz->nome,filho)==0){
-		raiz->pai = aux1;
-		strcpy(pai,aux1->nome);
-		aux1->ant = raiz->ant + 1;
-		raiz->mae = aux2;
-		strcpy(mae,aux2->nome);
-		aux2->ant = raiz->ant + 1;
-	}
-	if(strcmp(raiz->nome,filho)!=0){
-		Insertion(raiz->pai, filho, mae, pai);
-	}
-	if(strcmp(raiz->nome,filho)!=0){
-		Insertion(raiz->mae, filho, mae, pai);
+
+void Insertion(struct arvore * raiz, char * filho, char * pai, char * mae, int k){
+	struct arvore * p = (struct arvore *) malloc(sizeof(struct arvore));
+	struct arvore * m = (struct arvore *) malloc(sizeof(struct arvore));
+	p->pai = NULL;
+    p->mae = NULL;
+    m->pai = NULL;
+    m->mae = NULL;
+    strcpy(pai,p->nome);
+    strcpy(mae,m->nome);
+    search(raiz,filho)->pai = p;
+    search(raiz,filho)->mae = m;
+    p->grau = search(raiz,filho)->grau + 1;
+    m->grau = p->grau;
+    if (p->grau>k){
+    	k=p->grau;
 	}
 }
+
+
 
 int Parentesco(struct arvore * raiz, char * nome1, char * nome2){
-	int a = search(raiz,nome1)->ant;
-	int b = search(raiz,nome2)->ant;
+	int a = search(raiz,nome1)->grau;
+	int b = search(raiz,nome2)->grau;
 	if (a>=b){
 		if (search(search(raiz,nome1),nome2)!=NULL){
 			return (a-b);
@@ -65,7 +62,27 @@ int Parentesco(struct arvore * raiz, char * nome1, char * nome2){
 	}
 }
 
-void ImpGeracao(struct arvore * raiz){
+void ImpGeracaoN(struct arvore * raiz,int n){
+	if(raiz!=NULL){
+		ImpGeracaoN(raiz->pai,n);
+		if(raiz->grau == n){
+			printf("%s ",raiz->nome);
+		}
+		ImpGeracaoN(raiz->mae,n);
+	}
+}
+
+void ImpGeracaoTotal(struct arvore * raiz,int k){
+	int i;
+	if (raiz->grau>=k){
+		printf("Nao possui antepassados");
+	}
+	else{
+		for(i=raiz->grau;i<=k;i++){
+			ImpGeracaoN(raiz,i);
+			printf("\n");
+	    }
+	}
 }
 
 
@@ -84,21 +101,18 @@ void ImpLabel(struct arvore * raiz){
 
 void main(){
 	int menu,i,imp,a;
-	char * f = (char *)malloc(20*sizeof(char));
-	char * p = (char *)malloc(20*sizeof(char));
-	char * m = (char *)malloc(20*sizeof(char));
+	int k = 1;
+	char f[20],p[20],m[20];
 	struct arvore * raiz = (struct arvore *) malloc(sizeof(struct arvore));
 	raiz->pai = NULL;
     raiz->mae = NULL;
+    raiz->grau = k;
 	printf("Digite a primeira entrada para a arvore genealogica (formato filho_pai_mae):\n");
 	scanf("%s",&f);
 	scanf("%s",&p);
 	scanf("%s",&m);
 	strcpy(f,raiz->nome);
-	Insertion(raiz,f,p,m);
-	free(f);
-	free(p);
-	free(m);
+	Insertion(raiz,f,p,m,k);
 	int exit = 0;
 	while (exit ==0){
     	printf("Digite 1 para inserir, 2 para grau de parentesco, 3 para imprimir, 4 para sair:  ");
@@ -109,13 +123,11 @@ void main(){
 		        scanf("%d", &a);
 		        for(i=1;i<=a;i++){
 				    printf("Digite %d-a entrada a ser inserida: ",i);
-				    scanf("%s",&f);
-	                scanf("%s",&p);
-	                scanf("%s",&m);
-				    Insertion(raiz,f,p,m);
-				    free(f);
-	                free(p);
-	                free(m);
+				    char f1[20],p1[20],m1[20];
+				    scanf("%s",&f1);
+	                scanf("%s",&p1);
+	                scanf("%s",&m1);
+				    Insertion(raiz,f1,p1,m1,k);
 		        }
 		        break;
             case 2:
@@ -128,7 +140,7 @@ void main(){
             	printf("Digite 1 para imprimir a arvore por geracao, 2 para imprimir a arvore em LABELLED BRACKETING, 3 para imprimir antepassados de um individuo: ");
             	scanf("%d",&imp);
             	if(imp==1){
-            		ImpGeracao(raiz);
+            		ImpGeracaoTotal(raiz,k);
             	}
             	if(imp==2){
             		ImpLabel(raiz);
@@ -136,7 +148,7 @@ void main(){
             	if(imp==3){
             		printf("Digite o nome cujos antepassados serao impressos: ");
             		scanf("%s",&m);
-            		ImpGeracao(search(raiz,m));
+            		ImpGeracaoTotal(search(raiz,m),k);
 				}
 				if(imp!=1&&imp!=2&&imp!=3){
     	            printf("Numero nao pertencente ao menu\n");
@@ -149,8 +161,6 @@ void main(){
     	        printf("Numero nao pertencente ao menu\n");
         }
     }
-    free(f);
-	free(p);
-	free(m);
 }
+
 
